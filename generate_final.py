@@ -1,3 +1,54 @@
+#!/usr/bin/env python3
+import os
+from anthropic import Anthropic
+
+client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+files_to_generate = {
+    "server/index.ts": """Create Express server with tRPC.
+
+Features:
+- Express app setup
+- CORS enabled
+- tRPC middleware at /api/trpc
+- Serve static files from dist/
+- Error handling
+- Port from env (default 3000)
+
+Import appRouter from './routers/index'.
+Import createContext from './_core/trpc'.
+Use @trpc/server/adapters/express.
+
+Return ONLY TypeScript code.""",
+
+    "index.html": """Create HTML entry point for Vite.
+
+Features:
+- <!DOCTYPE html>
+- Meta tags (charset, viewport)
+- Title: Shopee GMV Max Ads Tracker
+- Root div (#root)
+- Script tag for src/main.tsx (type="module")
+- Basic styling
+
+Return ONLY HTML code.""",
+
+    ".gitignore": """Create .gitignore file.
+
+Ignore:
+- node_modules/
+- dist/
+- .env
+- *.log
+- .DS_Store
+- coverage/
+- drizzle/
+
+Return ONLY plain text.""",
+
+    "README.md": """Create comprehensive README.md.
+
+Include:
 # Shopee GMV Max Ads Tracker
 
 ## Overview
@@ -84,3 +135,32 @@ MIT
 
 ## Author
 TuiNui39
+
+Return ONLY Markdown content.""",
+}
+
+for filename, prompt in files_to_generate.items():
+    print(f"Generating {filename}...")
+    
+    message = client.messages.create(
+        model="claude-3-opus-20240229",
+        max_tokens=3000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    content = message.content[0].text.strip()
+    
+    # ลบ markdown code blocks
+    if content.startswith('```'):
+        lines = content.split('\n')
+        for i in range(len(lines)-1, -1, -1):
+            if lines[i].strip().startswith('```'):
+                content = '\n'.join(lines[1:i])
+                break
+    
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    print(f"✅ {filename} created! ({len(content.splitlines())} lines)")
+
+print("\n🎉 All final files generated!")
